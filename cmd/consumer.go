@@ -1,16 +1,19 @@
 package cmd
 
 import (
-	"fmt"
-
+	"github.com/mvr-garcia/kafikinha/pkg/logger"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
 
 var consumerCmd = &cobra.Command{
 	Use:   "consumer",
 	Short: "Start the consumer",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("[consumer] brokers=%s topic=%s (TODO: implementar)\n", brokers, topic)
+		logger.L().Info("starting consumer",
+			zap.String("brokers", brokers),
+			zap.String("topic", topic),
+		)
 	},
 }
 

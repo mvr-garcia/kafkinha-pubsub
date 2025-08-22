@@ -31,6 +31,7 @@ func NewProducer(brokers []string, topic string) (*Producer, error) {
 	p := &Producer{
 		asyncProducer: asyncProducer,
 		topic:         topic,
+		done:          make(chan struct{}),
 	}
 
 	// Handle errors and successes asynchronously

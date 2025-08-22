@@ -21,9 +21,6 @@ var consumerCmd = &cobra.Command{
 		}
 
 		cons.Start()
-
-		// Block until termination
-		select {}
 	},
 }
 

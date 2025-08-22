@@ -55,22 +55,25 @@ func (c *Consumer) Start() {
 		}
 	}()
 
-	go func() {
-		sigterm := make(chan os.Signal, 1)
-		signal.Notify(sigterm, syscall.SIGINT, syscall.SIGTERM)
-		select {
-		case <-sigterm:
-			logger.L().Info("shutdown signal received")
-			cancel()
-		case <-c.done:
-			cancel()
-		}
-	}()
+	sigterm := make(chan os.Signal, 1)
+	signal.Notify(sigterm, syscall.SIGINT, syscall.SIGTERM)
+
+	select {
+	case <-sigterm:
+		logger.L().Info("shutdown signal received")
+		cancel()
+	case <-c.done:
+		cancel()
+	}
+
+	if err := c.Close(); err != nil {
+		logger.L().Error("error closing consumer group", zap.Error(err))
+	}
 }
 
-func (c *Consumer) Close() {
+func (c *Consumer) Close() error {
 	close(c.done)
-	c.group.Close()
+	return c.group.Close()
 }
 
 // --- sarama.ConsumerGroupHandler implementation ---

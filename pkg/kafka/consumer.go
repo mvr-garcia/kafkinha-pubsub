@@ -16,11 +16,12 @@ type Consumer struct {
 	topic   string
 	groupID string
 	done    chan struct{}
+	handler MessageHandler
 }
 
-func NewConsumer(brokers []string, topic, groupID string) (*Consumer, error) {
+func NewConsumer(brokers []string, topic, groupID string, hanler MessageHandler) (*Consumer, error) {
 	config := sarama.NewConfig()
-	config.Version = sarama.V2_5_0_0
+	config.Version = sarama.V2_8_0_0
 	config.Consumer.Return.Errors = true
 	config.Consumer.Offsets.Initial = sarama.OffsetNewest
 
@@ -34,6 +35,7 @@ func NewConsumer(brokers []string, topic, groupID string) (*Consumer, error) {
 		topic:   topic,
 		groupID: groupID,
 		done:    make(chan struct{}),
+		handler: hanler,
 	}
 
 	return c, nil
@@ -94,13 +96,17 @@ func (c *Consumer) Cleanup(_ sarama.ConsumerGroupSession) error {
 
 func (c *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	for message := range claim.Messages() {
-		logger.L().Info("message consumed",
-			zap.String("topic", message.Topic),
-			zap.Int32("partition", message.Partition),
-			zap.Int64("offset", message.Offset),
-			zap.ByteString("value", message.Value),
-		)
-		session.MarkMessage(message, "") // offset commit
+		err := c.handler.ProcessMessage(c.topic, message.Partition, message.Offset, message.Key, message.Value)
+		if err != nil {
+			logger.L().Error("failed to process message",
+				zap.Error(err),
+				zap.String("topic", message.Topic),
+				zap.Int32("partition", message.Partition),
+				zap.Int64("offset", message.Offset),
+			)
+		} else {
+			session.MarkMessage(message, "") // offset commit
+		}
 	}
 	return nil
 }

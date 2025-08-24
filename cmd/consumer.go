@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/mvr-garcia/kafikinha/pkg/handlers"
 	"github.com/mvr-garcia/kafikinha/pkg/kafka"
 	"github.com/mvr-garcia/kafikinha/pkg/logger"
 	"github.com/spf13/cobra"
@@ -15,7 +16,9 @@ var consumerCmd = &cobra.Command{
 		topic, _ := cmd.Flags().GetString("topic")
 		groupID, _ := cmd.Flags().GetString("group")
 
-		cons, err := kafka.NewConsumer(brokers, topic, groupID)
+		handler := handlers.NewLogHandler()
+
+		cons, err := kafka.NewConsumer(brokers, topic, groupID, handler)
 		if err != nil {
 			logger.L().Fatal("failed to create consumer", zap.Error(err))
 		}
